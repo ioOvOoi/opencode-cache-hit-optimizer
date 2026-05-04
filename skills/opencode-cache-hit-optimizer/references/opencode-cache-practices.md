@@ -54,6 +54,22 @@ Atlas benefits from file-backed planning:
 
 This pattern avoids repeatedly re-sending large planning context while preserving recoverability across compaction or new sessions.
 
+## Stable Terse Output Pattern
+
+Short, repeatable responses can reduce noisy tail growth in long sessions. A `wenyan-lite`-style mode is useful only when it acts as a stable terse-output pattern:
+
+- keep the same compact response shape across turns
+- preserve exact code, paths, commands, metrics, and warnings
+- report only decision, cache reason, and next step when detail is not needed
+- stop using terse style when compression could hide risk, ordering, or verification evidence
+
+Cache framing:
+
+- Good: repeated phase-boundary replies use the same short structure.
+- Bad: every turn invents a new stylistic form, causing unnecessary prompt churn.
+
+This is not general style guidance. Use terse modes only when they improve cache locality or reduce low-value context growth.
+
 ## Cost Review Checklist
 
 When reviewing an OpenCode session for cache health, check:

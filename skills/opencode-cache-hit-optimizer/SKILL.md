@@ -43,9 +43,12 @@ Do not use for generic token counting unless cache-prefix behavior affects the d
 | Same task with accumulated evidence | Continue current session | Starting over and losing useful cached prefix chain |
 | Broad file search or repo survey | Delegate to `@explore` / read-only subagent | Filling the main session with raw search output |
 | Noisy tool output | Reduce/drop old tool outputs after extracting findings | Keeping huge outputs in main context indefinitely |
+| Repeated status replies | Use a stable terse format when enough, e.g. `wenyan-lite`-style short summaries | Rephrasing the same status in many new ways |
 | Emergency confusion | `/compact` or `/new` | Repeatedly appending corrective prompts to a confused context |
 
 For Atlas specifically, keep planning state in project files and return concise phase summaries to the main conversation. This preserves task continuity without forcing every raw finding into the prompt prefix.
+
+Treat terse modes such as `wenyan-lite` only as stable output shapes that slow volatile tail growth. Do not expand this skill into a general writing-style or tone-control skill.
 
 ## DeepSeek V4 Thinking Mode Rules
 
