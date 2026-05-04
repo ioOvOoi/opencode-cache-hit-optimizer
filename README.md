@@ -1,23 +1,22 @@
 # opencode-cache-hit-optimizer
 
-An Agent Skill for improving DeepSeek V4 prompt cache hit rates in OpenCode-style coding sessions.
+此 Agent Skill，专治一事：**增 DeepSeek V4 于 OpenCode 式会话中之 prompt cache hit**。
 
-The skill focuses on one problem: **keeping request prefixes stable enough for DeepSeek's prompt cache to keep working while an agent explores, edits, compacts, and delegates work.**
+要义：守 request prefix 之稳，使 agent 探索、编辑、`/compact`、委派 subagent 时，prompt cache 犹可续用。
 
-## Why This Exists
+## 何以有此
 
-DeepSeek V4 exposes large context windows and low-cost cached input, but cache savings depend on exact prefix reuse. Agent workflows can accidentally destroy that reuse by changing system prompts, switching models or thinking modes, compacting too aggressively, or flooding the main session with exploratory tool output.
+DeepSeek V4 有大 context window，亦有低价 cached input。然 cache 省费，系于 exact prefix reuse。若 system prompt 屡变、model / provider / thinking mode 中途换、`/compact` 过猛，或主会话灌入大量 noisy tool output，则 cache 易断。
 
-This skill gives agents a cache-first decision framework for:
+此 skill 给 agent 一 cache-first 法：
 
-- preserving stable instruction prefixes
-- choosing between continuing a session and starting a new one
-- deciding when `/compact` helps or hurts
-- isolating noisy exploration in subagents
-- keeping thinking mode, model, provider, and API-key choices cache-aware
-- reviewing `prompt_cache_hit_tokens` and `prompt_cache_miss_tokens` when available
+- 守 stable instruction prefix
+- 判 continue、`/new`、`/compact` 何者宜
+- 以 subagent 隔 noisy exploration
+- 使 thinking mode、model、provider、API key 选择知 cache 利害
+- 有 usage 时，观 `prompt_cache_hit_tokens` 与 `prompt_cache_miss_tokens`
 
-## Skill Layout
+## 目录
 
 ```text
 skills/
@@ -29,13 +28,13 @@ skills/
       deepseek-tui-lessons.md
 ```
 
-## Installation
+## 安装
 
-### OpenCode-style local skill directory
+### OpenCode 式本地 skill
 
-Install the repository wherever local skills or vendored skills are kept, then expose the skill directory that contains `SKILL.md`.
+置 repo 于 local skill 或 vendor 所在处，再暴露含 `SKILL.md` 之 skill 目录。
 
-Example using a vendor directory plus a minimal wrapper:
+例：vendor + wrapper：
 
 ```text
 <opencode-config>/
@@ -47,48 +46,46 @@ Example using a vendor directory plus a minimal wrapper:
       SKILL.md
 ```
 
-The wrapper can stay small and point agents to the vendored upstream skill source. Avoid hard-coding personal machine paths in published wrappers or docs.
+wrapper 可简，然须可独立执行；可注明 vendored upstream path。勿在公开文档写个人机器路径。
 
 ### DeepSeek-TUI
 
-DeepSeek-TUI supports installing community skills from GitHub repositories:
+DeepSeek-TUI 可从 GitHub 安装 community skill：
 
 ```text
 /skill install github:ioOvOoi/opencode-cache-hit-optimizer
 ```
 
-This repository uses the multi-skill layout `skills/<name>/SKILL.md`.
+本 repo 用 multi-skill layout：`skills/<name>/SKILL.md`。
 
-## When to Load the Skill
+## 何时加载
 
-Load `opencode-cache-hit-optimizer` for questions or tasks involving:
+遇下列事，载 `opencode-cache-hit-optimizer`：
 
-- maximizing DeepSeek V4 cache hits
-- reducing cache misses in OpenCode or Atlas-like agents
-- deciding whether to use `/new`, continue, or `/compact`
-- structuring `AGENTS.md` or instruction files for stable prefixes
-- deciding whether subagents improve or harm cache efficiency
-- comparing DeepSeek-TUI cache-related design patterns with OpenCode workflows
-- explaining cost differences between cache-hit and cache-miss input
+- 求最大化 DeepSeek V4 cache hits
+- 降 OpenCode / Atlas cache misses
+- 判 `/new`、continue、`/compact`
+- 设计 `AGENTS.md` 或 instruction files，使 prefix 稳
+- 判 subagent 是护 cache，抑或增耗
+- 比 DeepSeek-TUI cache-aware 设计与 OpenCode workflow
+- 解释 cache-hit 与 cache-miss input 成本差
 
-Do not load it for generic context-window advice unless prefix-cache behavior changes the decision.
+若仅泛谈 context window，而不涉 prefix-cache 行为，勿载。
 
-## Included References
+## 参考
 
-- `deepseek-v4-cache.md` — DeepSeek V4 prefix-cache mechanics, usage metrics, and thinking-mode implications
+- `deepseek-v4-cache.md` — DeepSeek V4 prefix cache、usage metrics、thinking mode 影响
 - `opencode-cache-practices.md` — OpenCode / Atlas session-shaping patterns
-- `deepseek-tui-lessons.md` — DeepSeek-TUI design lessons adapted for OpenCode cache optimization
+- `deepseek-tui-lessons.md` — DeepSeek-TUI 经验，取其 cache optimization 义
 
-## Design Principles
+## 设计律
 
-1. **Stable prefixes beat clever compression.** Keep startup instructions small, durable, and consistent.
-2. **Append when continuity matters.** Continue a session when previous turns are useful cached prefix.
-3. **Start fresh when tasks diverge.** Use a new session for independent work that only needs stable project instructions.
-4. **Isolate noisy exploration.** Subagents can protect the main session even if child calls have worse cache reuse.
-5. **Measure hit/miss, not just tokens.** A larger mostly cached prompt can be cheaper than a smaller uncached one.
+1. **Stable prefix 胜 clever compression。** Startup instructions 宜短、稳、久。
+2. **需 continuity，则 append。** 旧 turns 有用，留其 cached prefix chain。
+3. **事异则新。** 独立任务用 `/new`，复用稳定 project instructions。
+4. **Noisy exploration 外置。** subagents 可护 main session，即使 child cache reuse 较差。
+5. **量 hit/miss，勿只数 tokens。** 较长而多 hit，或比短而多 miss 廉。
 
-## Related Inspiration
+## 风格
 
-- DeepSeek V4 prompt-cache behavior and 1M-token context design
-- DeepSeek-TUI's cache-aware terminal agent patterns: cost tracking, compaction, thinking-mode controls, and cheap Flash fan-out
-- OpenCode / Atlas workflows that separate stable instructions, task state, exploration, and verification
+本文采文言简式；技术术语保留现代中文 + English。此风格只为稳定短输出与低噪声 tail，不作通用文风 skill。

@@ -2,81 +2,81 @@
 
 ## Stable Startup Prefix
 
-Put durable, high-signal project instructions in stable files loaded near session start:
+Durable high-signal project instructions，宜置于 session start 附近之稳定文件：
 
 - `AGENTS.md`
 - configured `instructions` files
 - compact global agent instructions
 
-Keep these files concise. Frequent edits to startup instructions reduce cross-session prefix reuse.
+此类文件宜 concise。频改 startup instructions，则 cross-session prefix reuse 必减。
 
 ## `/new` vs Continue
 
-Use `/new` when the next task is independent and can benefit from the same stable startup prefix.
+新任务独立，且仅需同一 stable startup prefix，则用 `/new`。
 
-Continue the current session when previous turns contain necessary decisions, evidence, or partially completed work.
+若 previous turns 含必要 decisions、evidence、partial work，则 continue current session。
 
-Decision rule:
+决策：
 
-- Need old conversation details → continue.
-- Need only project rules and a fresh task → `/new`.
-- Current context is noisy or confused → `/compact` or `/new` depending on whether the summary is still valuable.
+- 需 old conversation details → continue。
+- 仅需 project rules + fresh task → `/new`。
+- current context noisy 或 confused → `/compact` 或 `/new`，视 summary 是否仍有值。
 
 ## `/compact` Strategy
 
-Full compaction replaces the accumulated conversation with a summary and creates a new prefix shape after that point. Use it when context is too large or confused, not as the first response to ordinary growth.
+Full compaction 以 summary 代 accumulated conversation，自该点后生新 prefix shape。只于 context 过大或混乱时用；勿以其应付普通增长。
 
-Prefer this order:
+优先序：
 
-1. Drop or reduce large completed tool outputs.
-2. Move durable task state into project files when appropriate.
-3. Summarize phase findings before moving on.
-4. Use `/compact` when local cleanup is insufficient.
+1. Drop / reduce large completed tool outputs。
+2. Durable task state 移入 project files（若合宜）。
+3. 入下一 phase 前，summarize findings。
+4. Local cleanup 不足，方用 `/compact`。
 
 ## Subagent Isolation
 
-Subagents are cache-expensive but context-protective. Use them for broad, independent, noisy work:
+Subagents cache-expensive，然 context-protective。用于 broad、independent、noisy work：
 
 - repository exploration
 - web research
 - parallel file search
 - independent hypothesis checks
 
-Return concise findings to the main session. Do not merge raw subagent logs back into the primary context.
+只返 concise findings 于 main session。勿将 raw subagent logs 合回 primary context。
 
-## Atlas-Specific Pattern
+## Atlas Pattern
 
-Atlas benefits from file-backed planning:
+Atlas 宜 file-backed planning：
 
-- keep task plans in `.opencode/atlas/task_plan.md`
-- keep findings in `.opencode/atlas/findings.md`
-- keep progress in `.opencode/atlas/progress.md`
+- `task_plan.md` 存 plan
+- `findings.md` 存 evidence 与 paths
+- `progress.md` 存 session log 与 verification
 
-This pattern avoids repeatedly re-sending large planning context while preserving recoverability across compaction or new sessions.
+此法免反复发送 large planning context，且经 compaction 或 new session 后仍可恢复。
 
 ## Stable Terse Output Pattern
 
-Short, repeatable responses can reduce noisy tail growth in long sessions. A `wenyan-lite`-style mode is useful only when it acts as a stable terse-output pattern:
+短而重复之 replies，可减 long session 中 noisy tail growth。`wenyan-lite` 只在其为 stable terse-output pattern 时有益：
 
-- keep the same compact response shape across turns
-- preserve exact code, paths, commands, metrics, and warnings
-- report only decision, cache reason, and next step when detail is not needed
-- stop using terse style when compression could hide risk, ordering, or verification evidence
+- across turns 保同 compact response shape
+- code、paths、commands、metrics、warnings 必 exact
+- 细节非必需时，只报 decision、cache reason、next step
+- 若 compression 会藏 risk、ordering、verification evidence，则止用 terse style
 
-Cache framing:
+Cache framing：
 
-- Good: repeated phase-boundary replies use the same short structure.
-- Bad: every turn invents a new stylistic form, causing unnecessary prompt churn.
+- 善：phase-boundary replies 恒用同一短结构。
+- 恶：每 turn 新造文体，徒增 prompt churn。
 
-This is not general style guidance. Use terse modes only when they improve cache locality or reduce low-value context growth.
+此非 general style guidance。terse modes 只为 improve cache locality 或 reduce low-value context growth。
 
 ## Cost Review Checklist
 
-When reviewing an OpenCode session for cache health, check:
+审 OpenCode session cache health，当问：
 
-- Did stable instruction files change?
-- Did the agent switch model/provider/API key?
-- Did the agent switch thinking mode?
-- Did exploratory outputs stay out of the main session?
-- Did reductions happen after completed phases?
-- Do usage metrics show high `prompt_cache_hit_tokens` relative to misses?
+- stable instruction files 是否变？
+- agent 是否换 model / provider / API key？
+- agent 是否换 thinking mode？
+- exploratory outputs 是否留在 main session 外？
+- completed phases 后是否 reduction？
+- usage metrics 中 `prompt_cache_hit_tokens` 是否高于 misses？

@@ -2,50 +2,50 @@
 
 ## Prefix Cache Model
 
-DeepSeek API caching rewards exact prefix reuse. A later request can hit cache for a previous request prefix when the initial token sequence is unchanged.
+DeepSeek API 之 cache，贵在 exact prefix reuse。后一 request 若开头 token sequence 与前一 request prefix 不变，即可 hit cache。
 
-Example:
+例：
 
-- Request 1: `A + B` creates a cached prefix.
-- Request 2: `A + B + C` can hit `A + B`.
-- Request 3: `A + C` does not hit `A + B`, but the service may later extract common prefix `A`.
+- Request 1：`A + B`，生 cached prefix。
+- Request 2：`A + B + C`，可 hit `A + B`。
+- Request 3：`A + C`，不 hit `A + B`；service 或后取 common prefix `A`。
 
-The practical rule is simple: keep the beginning of requests stable and append rather than rewrite.
+实律甚简：request 之始须稳；宜 append，勿 rewrite。
 
 ## Usage Metrics
 
-When available, inspect response `usage` fields:
+有 response `usage` fields 时，当观：
 
 - `prompt_cache_hit_tokens` — input tokens served from cache
 - `prompt_cache_miss_tokens` — input tokens billed as uncached
 
-Optimize for cost using hit/miss split, not only total context length. A longer mostly-hit prompt may be cheaper than a shorter mostly-miss prompt.
+审 cost 须看 hit/miss split，勿只看 total context length。较长而 mostly-hit，可廉于较短而 mostly-miss。
 
 ## Cache-Breaking Events
 
-Treat these as likely cache-pool or prefix breaks:
+下列事，多破 cache pool 或 prefix：
 
-- changing the model, such as V4 Pro ↔ V4 Flash
-- changing provider, such as DeepSeek ↔ Fireworks ↔ NVIDIA NIM ↔ SGLang
-- changing API key or account
-- changing system prompt or configured instruction files
-- switching to a thinking mode that injects extra system instructions
-- editing earlier conversation messages or otherwise changing prefix content
+- 换 model，如 V4 Pro ↔ V4 Flash
+- 换 provider，如 DeepSeek ↔ Fireworks ↔ NVIDIA NIM ↔ SGLang
+- 换 API key 或 account
+- 改 system prompt 或 configured instruction files
+- 切 thinking mode，若其注入 extra system instructions
+- 改 earlier conversation messages，或任意变 prefix content
 
 ## Thinking Mode Guidance
 
-DeepSeek V4 thinking mode can affect cache behavior when it changes request-level instructions or output shape.
+DeepSeek V4 thinking mode 若改 request-level instructions 或 output shape，即可害 cache。
 
-Recommended pattern:
+建议：
 
 | Work type | Mode | Cache note |
 |---|---|---|
-| Primary coding/planning | think-high | Stable quality/default choice |
-| Simple search/exploration | non-think | Shorter and cheaper for subagents |
-| Hard architecture/proof | think-max in a fresh session | Avoid mixing with other modes mid-session |
+| Primary coding/planning | think-high | 稳定质量/default choice |
+| Simple search/exploration | non-think | subagents 更短更廉 |
+| Hard architecture/proof | think-max in a fresh session | 勿与他 mode 混于同 session |
 
-Do not switch thinking mode mid-session unless the current cache chain is no longer valuable.
+除非当前 cache chain 已无价值，勿中途切 thinking mode。
 
-## Context Window Is Not a License to Hoard
+## Context Window 非囤积许可
 
-DeepSeek V4's large context window makes long tasks possible, but stale tool output still increases prompt size, distracts the model, and can reduce effective cache benefits after compaction. Preserve essential summaries and remove raw noise.
+DeepSeek V4 context window 大，可任长事；然 stale tool output 仍增 prompt size、扰 model、且 compaction 后或损 cache benefit。宜存 essential summaries，去 raw noise。

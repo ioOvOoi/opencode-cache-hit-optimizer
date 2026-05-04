@@ -1,88 +1,86 @@
 ---
 name: opencode-cache-hit-optimizer
-description: Use when optimizing DeepSeek V4 prompt cache hits in OpenCode or Atlas sessions, especially for stable prompts, AGENTS.md, /new, /compact, subagents, thinking modes, provider/model switching, or cache hit/miss cost analysis.
+description: 用于优化 DeepSeek V4 prompt cache hits；适用于 stable prompts、AGENTS.md、/new、/compact、subagents、thinking modes、provider/model switching、cache hit/miss cost analysis。
 ---
 
 # OpenCode Cache Hit Optimizer
 
-## Overview
+专治一事：增 DeepSeek V4 prompt cache hit。法在守 request prefix 之稳，分 noisy exploration 与 long-lived task context，并视 model / provider / thinking mode 变更为 cache-breaking events。
 
-Maximize DeepSeek V4 prompt cache hits by keeping request prefixes stable, separating exploratory work from long-lived task context, and treating model/provider/thinking-mode changes as cache-breaking events.
+总律：**先保 stable prefix；次减 context；parallelize 必问 cache trade-off。**
 
-Core rule: **preserve stable prefixes first; reduce context second; parallelize only when the cache trade-off is worth it.**
+## 何时用
 
-## When to Use
-
-Use this skill when working on:
+遇下列事，乃用：
 
 - DeepSeek V4 cache hit / cache miss optimization
-- OpenCode or Atlas long-session strategy
-- `AGENTS.md`, `instructions`, or system-prompt stability
-- `/new`, `/compact`, Magic Context, DCP, or compaction behavior
-- subagent fan-out, exploration isolation, or model-tier routing
-- thinking-mode selection such as non-think, think-high, or think-max
-- cost review involving `prompt_cache_hit_tokens` and `prompt_cache_miss_tokens`
+- OpenCode 或 Atlas long-session strategy
+- `AGENTS.md`、`instructions`、system-prompt stability
+- `/new`、`/compact`、Magic Context、DCP、compaction behavior
+- subagent fan-out、exploration isolation、model-tier routing
+- thinking mode：non-think、think-high、think-max
+- 以 `prompt_cache_hit_tokens`、`prompt_cache_miss_tokens` 审 cost
 
-Do not use for generic token counting unless cache-prefix behavior affects the decision.
+若仅泛数 tokens，而不涉 cache-prefix behavior，勿用。
 
-## Cache-First Decision Flow
+## Cache-First 决策流
 
-1. **Identify the stable prefix.** Check which content appears at the start of repeated requests: system prompt, `AGENTS.md`, configured instruction files, persistent memory, and the early conversation.
-2. **Avoid prefix churn.** Do not edit stable instruction files, switch models/providers/API keys, or change thinking mode mid-session unless the benefit outweighs cache loss.
-3. **Choose session shape.** Use `/new` for independent tasks that can reuse the same stable startup prefix. Continue the current session when the previous turns are needed as prefix.
-4. **Isolate exploration.** Use subagents for broad search or noisy investigation when preserving the main session matters more than subagent cache reuse.
-5. **Compact deliberately.** Prefer local pruning or Magic Context-style reduction before full `/compact`. Full compaction resets the prefix after the summary point.
-6. **Verify with usage metrics.** Inspect `prompt_cache_hit_tokens` and `prompt_cache_miss_tokens` when available; optimize based on hit ratio and dollar impact, not total tokens alone.
+1. **识 stable prefix。** 看 repeated requests 之首：system prompt、`AGENTS.md`、configured instruction files、persistent memory、early conversation。
+2. **避 prefix churn。** 勿轻改 stable instruction files；勿中途换 model / provider / API key / thinking mode，除非收益胜 cache loss。
+3. **择 session shape。** 独立任务用 `/new`，复用同一 startup prefix；旧 turns 仍有证据或决策，则 continue。
+4. **隔 exploration。** broad search 或 noisy investigation 用 subagents，保 main session clean。
+5. **慎 compact。** 先 local pruning 或 Magic Context-style reduction；full `/compact` 会自 summary 点后重塑 prefix。
+6. **以 usage 验。** 有 `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens`，则依 hit ratio 与 cost impact，不只看 total tokens。
 
-## OpenCode / Atlas Practices
+## OpenCode / Atlas 法
 
-| Situation | Prefer | Avoid |
+| 情形 | 宜 | 忌 |
 |---|---|---|
-| Stable project rules | Put concise durable rules in `AGENTS.md` or configured `instructions` | Re-pasting the same project context into every prompt |
-| New independent task | Start `/new` with the same stable instruction prefix | Continuing a polluted long conversation |
-| Same task with accumulated evidence | Continue current session | Starting over and losing useful cached prefix chain |
-| Broad file search or repo survey | Delegate to `@explore` / read-only subagent | Filling the main session with raw search output |
-| Noisy tool output | Reduce/drop old tool outputs after extracting findings | Keeping huge outputs in main context indefinitely |
-| Repeated status replies | Use a stable terse format when enough, e.g. `wenyan-lite`-style short summaries | Rephrasing the same status in many new ways |
-| Emergency confusion | `/compact` or `/new` | Repeatedly appending corrective prompts to a confused context |
+| Stable project rules | 置 concise durable rules 于 `AGENTS.md` 或 configured `instructions` | 每 prompt 重贴 project context |
+| 新独立任务 | `/new`，用同 stable instruction prefix | 续 polluted long conversation |
+| 同任务有积累证据 | continue current session | 重开而失 useful cached prefix chain |
+| broad file search / repo survey | 委 `@explore` 或 read-only subagent | 主会话塞 raw search output |
+| noisy tool output | 摘 findings 后 reduce / drop | 巨量 output 久留 main context |
+| repeated status replies | 用稳定短式，如 `wenyan-lite` | 同一状态每回换说法 |
+| emergency confusion | `/compact` 或 `/new` | 对 confused context 反复补 prompt |
 
-For Atlas specifically, keep planning state in project files and return concise phase summaries to the main conversation. This preserves task continuity without forcing every raw finding into the prompt prefix.
+Atlas 宜以 project files 存 planning state，只返 concise phase summaries 于 main conversation。如此既存 task continuity，又不令 raw findings 反复入 prompt prefix。
 
-Treat terse modes such as `wenyan-lite` only as stable output shapes that slow volatile tail growth. Do not expand this skill into a general writing-style or tone-control skill.
+本文文言简式，非 tone-control。其用唯二：短、稳、少 volatile tail。勿扩此 skill 为通用写作风格。
 
-## DeepSeek V4 Thinking Mode Rules
+## DeepSeek V4 Thinking Mode 律
 
-- Keep one thinking mode for the whole session when possible.
-- Prefer **think-high** for primary coding/planning sessions when quality matters.
-- Prefer **non-think** for cheap exploratory subagents or simple retrieval work.
-- Reserve **think-max** for separate sessions because it can alter system prompt content and break prefix matching.
-- Treat model/provider/API-key changes as separate cache pools.
+- 一 session 尽量守同一 thinking mode。
+- 主 coding / planning，质量要紧，宜 **think-high**。
+- 简 search / exploration，或 cheap subagent，宜 **non-think**。
+- **think-max** 宜另开 session；其或改 system prompt content，破 prefix matching。
+- model / provider / API key 变，皆视为 separate cache pools。
 
-## Subagent Trade-Off
+## Subagent 取舍
 
-Subagents protect the main context but usually start fresh. Use them when:
+Subagents 护 main context，然多从 fresh context 起。用之于：
 
-- exploration would inject many irrelevant tool outputs into the main session
-- multiple independent searches can run in parallel
-- cheap models such as DeepSeek V4 Flash can handle the work
-- only a concise result needs to return to the main agent
+- exploration 将注入多 irrelevant tool outputs
+- 多 independent searches 可并行
+- cheap models 如 DeepSeek V4 Flash 足任其事
+- 只需 concise result 回 main agent
 
-Avoid unnecessary subagents when the task depends heavily on the current conversation prefix and the result would be cheaper to handle inline.
+若任务重依 current conversation prefix，且 inline 更廉，则勿滥用 subagent。
 
-## Verification
+## 验证
 
-Before claiming cache optimization success:
+称 cache optimization 成前，先查：
 
-1. Check whether the model/provider/API key/thinking mode stayed constant.
-2. Check whether stable instruction files changed.
-3. Check whether old noisy outputs were reduced or isolated.
-4. Check API usage fields when available:
+1. model / provider / API key / thinking mode 是否恒定。
+2. stable instruction files 是否改动。
+3. old noisy outputs 是否 reduce 或 isolate。
+4. API usage fields（若有）：
    - `prompt_cache_hit_tokens`
    - `prompt_cache_miss_tokens`
-5. Report the trade-off: hit ratio, cache miss risk, context cleanliness, and expected cost impact.
+5. 报 trade-off：hit ratio、cache miss risk、context cleanliness、expected cost impact。
 
-## Additional Resources
+## 参考
 
-- `references/deepseek-v4-cache.md` — DeepSeek V4 cache mechanics and thinking-mode implications
+- `references/deepseek-v4-cache.md` — DeepSeek V4 cache mechanics 与 thinking-mode implications
 - `references/opencode-cache-practices.md` — OpenCode / Atlas session patterns
-- `references/deepseek-tui-lessons.md` — DeepSeek-TUI design lessons adapted for OpenCode
+- `references/deepseek-tui-lessons.md` — DeepSeek-TUI 经验，取其 cache optimization 义
